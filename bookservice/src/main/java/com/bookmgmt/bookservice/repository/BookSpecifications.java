@@ -2,23 +2,25 @@ package com.bookmgmt.bookservice.repository;
 
 
 
+
 import java.util.ArrayList;
 import java.util.List;
 
+import com.bookmgmt.bookservice.entity.Book;
 import org.springframework.data.jpa.domain.Specification;
 
-import com.bookmgmt.bookservice.entity.Book;
 
 import jakarta.persistence.criteria.Predicate;
 
-
+// Builds the WHERE clause for the search: every word of the query must appear in the
+// title, author or description, and every filter that is given must match exactly.
 public final class BookSpecifications {
 
 	private BookSpecifications() {
 	}
 
 	public static Specification<Book> search(String query, String category, String language, String publisher,
-			Boolean available) {
+                                             Boolean available) {
 		return (root, cq, cb) -> {
 			List<Predicate> predicates = new ArrayList<>();
 

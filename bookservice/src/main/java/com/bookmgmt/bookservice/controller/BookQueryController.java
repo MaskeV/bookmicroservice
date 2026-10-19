@@ -2,6 +2,8 @@ package com.bookmgmt.bookservice.controller;
 
 
 
+
+import com.bookmgmt.bookservice.service.BookQueryService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -10,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.bookmgmt.bookservice.dto.FilterOptions;
 import com.bookmgmt.bookservice.dto.PageResponse;
 import com.bookmgmt.bookservice.entity.Book;
-import com.bookmgmt.bookservice.service.BookQueryService;
+
 
 
 // GET /api/books/search   -> one page of books (search + filters + sorting + paging)

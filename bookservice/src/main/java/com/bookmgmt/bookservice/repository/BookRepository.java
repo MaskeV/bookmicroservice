@@ -3,13 +3,11 @@ package com.bookmgmt.bookservice.repository;
 
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Lock;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 
 import com.bookmgmt.bookservice.entity.Book;
@@ -44,5 +42,25 @@ public interface BookRepository extends JpaRepository<Book, Integer>, JpaSpecifi
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("SELECT b FROM Book b WHERE b.id = :id")
 	Optional<Book> findByIdForUpdate(@Param("id") Integer id);
+
+	@Modifying
+	@Query("""
+        UPDATE Book b
+        SET b.available = CASE WHEN b.quantity > 1 THEN true ELSE false END,
+            b.quantity = b.quantity - 1,
+            b.updatedAt = :now
+        WHERE b.id = :id AND b.available = true AND b.quantity > 0
+        """)
+	int reserveOne(@Param("id") Integer id, @Param("now") LocalDateTime now);
+
+	@Modifying
+	@Query("""
+        UPDATE Book b
+        SET b.available = CASE WHEN COALESCE(b.quantity, 0) = 0 THEN true ELSE b.available END,
+            b.quantity = COALESCE(b.quantity, 0) + 1,
+            b.updatedAt = :now
+        WHERE b.id = :id
+        """)
+	int releaseOne(@Param("id") Integer id, @Param("now") LocalDateTime now);
 
 }

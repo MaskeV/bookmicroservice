@@ -6,18 +6,22 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import com.bookmgmt.bookservice.dto.BookSnapshot;
+
+import com.bookmgmt.bookservice.exception.OutOfStockException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
-import org.springframework.stereotype.Service;
+
 
 import com.bookmgmt.bookservice.document.BookDocument;
 import com.bookmgmt.bookservice.entity.Book;
 import com.bookmgmt.bookservice.exception.BookNotFoundException;
 import com.bookmgmt.bookservice.repository.BookRepository;
 import com.bookmgmt.bookservice.searchRepository.BookSearchRepository;
-
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -197,6 +201,27 @@ return (s == null || s.isBlank()) ? null : s.trim();
 private String nz(String s) {
 return s == null ? "" : s;
 }
+
+
+	@Transactional
+	public BookSnapshot reserve(int id) {
+		Book book = findBookById(id);                       // 404 if the book doesn't exist
+		if (bookRepository.reserveOne(id, LocalDateTime.now()) == 0)
+			throw new OutOfStockException(id);              // 409: no copies left
+		syncSearchIndex(id);
+		return new BookSnapshot(book.getId(), book.getTitle(), book.getAuthor(), book.getCategory());
+	}
+
+	@Transactional
+	public void release(int id) {
+		if (bookRepository.releaseOne(id, LocalDateTime.now()) == 0)
+			throw new BookNotFoundException(id);
+		syncSearchIndex(id);
+	}
+
+	private void syncSearchIndex(int id) {
+		bookRepository.findById(id).ifPresent(b -> bookSearchRepository.save(mapToBookDocument(b)));
+	}
 	
 	
 }
